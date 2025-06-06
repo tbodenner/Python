@@ -102,6 +102,7 @@ def ping_computers(computer_list: list[str]) -> None:
 def _get_user_chunks(computers: list[str]):
   for computer in computers:
     user: str = powershell_scripts.get_user(computer)
+    #print(f"{computer}: {user}")
     with user_lock:
         users[computer] = user
 
@@ -121,22 +122,37 @@ def get_users(computer_list: list[str]):
   # create our thread pool
   with ThreadPoolExecutor(max_workers=worker_count) as executor:
     # execute our commands in threads
-    executor.map(_get_user_chunks, _list_chunks(computer_list, 2))
+    executor.map(_get_user_chunks, _list_chunks(computer_list, 5))
 
   # create our end time after the work has been done
   end_time = time.time()
   # calculate our elapsed time
   elapsed_time = end_time - start_time
 
-  # print our computers and users
-  for key in users.keys():
-    print(f"{key}: {users[key]}")
+  # write our users to a file
+  with open("users.txt", "w") as f:
+    # loop through our keys
+    for key in users.keys():
+      # change any connection warnings to errors
+      if "WARNING" in users[key]:
+        users[key] = "Error"
+      # write the computer and user
+      f.write(f"{key}: {users[key]}\n")
+
+  # get some counts from our values
+  values_list = list(users.values())
+  error_count = values_list.count('Error')
+  no_user_count = values_list.count('')
+  user_count = len(values_list) - error_count - no_user_count
 
   # print our results
   print(f"Computers: {len(computer_list)}")
   print(f"Time: {elapsed_time:.2f}s")
   per_second = len(computer_list) / elapsed_time
   print(f"Checked {per_second:.2f} users/second")
+  print(f"Errors: {error_count}")
+  print(f"No User: {no_user_count}")
+  print(f"User: {user_count}")
 
 if __name__ == "__main__":
   # create our powershell script object
@@ -147,10 +163,10 @@ if __name__ == "__main__":
   ad_computers = powershell_scripts.get_ad_computers()
 
   # ping our computer and fill our good/fail lists
-  print("Pinging computers")
+  print("\nPinging computers")
   ping_computers(ad_computers)
 
   # get the logged in user for each computer we could ping
-  print("Getting logged in users")
+  print("\nGetting logged in users")
   get_users(good_list)
   
