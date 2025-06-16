@@ -2,6 +2,7 @@ import socket
 import time
 import os
 import threading
+from datetime import datetime
 from ping3 import ping # type: ignore
 from concurrent.futures import ThreadPoolExecutor
 # import our PowerShell module PowerShellScripts class
@@ -17,7 +18,7 @@ good_list: list[str] = []
 fail_list: list[str] = []
 
 # user dictionary
-users: dict[str, str] = dict()
+users: dict[str, tuple[str, datetime]] = dict()
 
 def _update_count(name: str, computer: str):
   # set our variables to the global scope
@@ -104,7 +105,7 @@ def _get_user_chunks(computers: list[str]):
     user: str = powershell_scripts.get_user(computer)
     #print(f"{computer}: {user}")
     with user_lock:
-        users[computer] = user
+        users[computer] = (user, datetime.now())
 
 def get_users(computer_list: list[str]):
   # create our start time
@@ -134,15 +135,15 @@ def get_users(computer_list: list[str]):
     # loop through our keys
     for key in users.keys():
       # change any connection warnings to errors
-      if "WARNING" in users[key]:
-        users[key] = "Error"
+      if "WARNING" in users[key][0]:
+        users[key] = ("Error", datetime.now())
       # write the computer and user
-      f.write(f"{key}: {users[key]}\n")
+      f.write(f"{key}, {users[key][0]}, {users[key][1].strftime('%Y-%m-%d %H:%M:%S')}\n")
 
   # get some counts from our values
   values_list = list(users.values())
-  error_count = values_list.count('Error')
-  no_user_count = values_list.count('')
+  error_count = [user[0] for user in values_list].count('Error')
+  no_user_count = [user[0] for user in values_list].count('')
   user_count = len(values_list) - error_count - no_user_count
 
   # print our results
