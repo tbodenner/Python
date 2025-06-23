@@ -130,8 +130,10 @@ def get_users(computer_list: list[str]):
   # calculate our elapsed time
   elapsed_time = end_time - start_time
 
+  # create our file name for our output file
+  file_name = "Users." + datetime.now().strftime('%Y%m%d%H%M%S') + ".txt"
   # write our users to a file
-  with open("users.txt", "w") as f:
+  with open(file_name, "w") as f:
     # loop through our keys
     for key in users.keys():
       # change any connection warnings to errors
