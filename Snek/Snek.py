@@ -1,7 +1,9 @@
 import socket
 import time
 import os
+import re
 import threading
+import sqlite3
 from datetime import datetime
 from ping3 import ping # type: ignore
 from concurrent.futures import ThreadPoolExecutor
@@ -16,6 +18,9 @@ user_lock = threading.Lock()
 # computer lists
 good_list: list[str] = []
 fail_list: list[str] = []
+
+# sqlite file for our user logged in times
+users_logged_in_db = 'users.db'
 
 # user dictionary
 users: dict[str, tuple[str, datetime]] = dict()
@@ -132,6 +137,8 @@ def get_users(computer_list: list[str]):
 
   # create our file name for our output file
   file_name = "Users." + datetime.now().strftime('%Y%m%d%H%M%S') + ".txt"
+  # list of our user data
+  all_user_data: list[list[str]] = []
   # write our users to a file
   with open(file_name, "w") as f:
     # loop through our keys
@@ -141,6 +148,12 @@ def get_users(computer_list: list[str]):
         users[key] = ("Error", datetime.now())
       # write the computer and user
       f.write(f"{key}, {users[key][0]}, {users[key][1].strftime('%Y-%m-%d %H:%M:%S')}\n")
+      # create a list of our user data
+      user_data = [key.strip(), users[key][0].strip(), users[key][1].strftime('%Y-%m-%d %H:%M:%S').strip()]
+      # add the list to our main list
+      all_user_data.append(user_data)
+
+  insert_into_sqlite(all_user_data)
 
   # get some counts from our values
   values_list = list(users.values())
@@ -156,6 +169,47 @@ def get_users(computer_list: list[str]):
   print(f"Errors: {error_count}")
   print(f"No User: {no_user_count}")
   print(f"User: {user_count}")
+
+def get_all_user_files(path: str) -> list[str]:
+  # our regex to search for
+  file_pattern = re.compile(r'Users\.[0-9]{14}\.txt')
+  # get the full path for our input
+  full_path = os.path.abspath(path)
+  # get the files in our path that match our regex
+  files = [f for f in os.listdir(full_path) if file_pattern.match(f)]
+  # add our full path to the files and return them
+  return [os.path.join(full_path, f) for f in files]
+
+def get_user_data_from_file(file_name: str) -> list[str]:
+  # our file contents
+  file_contents = None
+  # open the file in read mode
+  with open(file_name, 'r') as f:
+    # read the file contents
+    file_contents = f.readlines()
+  # return the list of lines
+  return file_contents
+
+def insert_into_sqlite(input_list: list[list[str]]) -> None:
+  # create our connection string
+  connection = sqlite3.connect(users_logged_in_db)
+  # get our cursor
+  cursor = connection.cursor()
+  # create our table if it is not found
+  cursor.execute("""
+    CREATE TABLE IF NOT EXISTS UserLogin (
+        Computer TEXT NOT NULL,
+        UserName TEXT NOT NULL,
+        TimeStamp TEXT NOT NULL,
+        PRIMARY KEY (Computer, UserName, TimeStamp)
+    )
+    """)
+  # insert our list into the table
+  cursor.executemany("INSERT OR REPLACE INTO UserLogin (Computer, UserName, TimeStamp) VALUES (?, ?, ?)", input_list)
+  # commit the changes
+  connection.commit()
+  # close our connection
+  connection.close()
 
 if __name__ == "__main__":
   # create our powershell script object
@@ -173,3 +227,12 @@ if __name__ == "__main__":
   print("\nGetting logged in users")
   get_users(good_list)
   
+  #file_content: list[list[str]] = []
+  #files = get_all_user_files(os.path.dirname(__file__))
+  #for file_name in files:
+  #  file_data = get_user_data_from_file(file_name)
+  #  for line in file_data:
+  #    split_line = line.split(',')
+  #    clean_line = [l.strip() for l in split_line]
+  #    file_content.append(clean_line)
+  #insert_into_sqlite(file_content)
