@@ -7,11 +7,11 @@ try {
 
     # invoke-command parameters
     $Parameters = @{
-        ComputerName	= "PYTHON_COMPUTERNAME"
-        ScriptBlock		= $ScriptBlock
-        ErrorAction		= "SilentlyContinue"
-        WarningAction   = "SilentlyContinue"
-        SessionOption	= $PssOptions
+        ComputerName      = "PYTHON_COMPUTERNAME"
+        ScriptBlock       = $ScriptBlock
+        ErrorAction       = "SilentlyContinue"
+        WarningAction     = "SilentlyContinue"
+        SessionOption     = $PssOptions
     }
 
     # run the command and save the result

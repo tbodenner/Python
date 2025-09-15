@@ -1,0 +1,1 @@
+SELECT Computer,UserName,MAX(TimeStamp) FROM UserLogin WHERE Computer LIKE "PRE-LT36%" AND UserName != "" AND UserName != "Error" GROUP BY Computer,UserName ORDER BY Computer,TimeStamp;
