@@ -1,8 +1,14 @@
-$Domains = @('va.gov', 'v18.med.va.gov')
-$Filter = "Name -like 'PRE-*'"
-$ComputerNames = @()
-foreach ($Domain in $Domains) {
-    $Server = Get-ADDomainController -Discover -DomainName $Domain
-    $ComputerNames += (Get-ADComputer -Filter $Filter -Server $Server | Where-Object { $_.Enabled -eq $true }).Name
+$RequiredModuleName = 'LDAP-ADTools'
+if($null -eq (Get-Module -Name $RequiredModuleName -ListAvailable)) {
+    exit
 }
-$ComputerNames
+Import-Module $RequiredModuleName -Scope Local
+$Filter = 'PRE-*'
+$ADComputersHashtable = Get-LDAPComputer -RootOU $Global:MyRootOU -Computers $Filter -Properties 'useraccountcontrol'
+$EnabledComputersHashtable = @{}
+foreach ($Key in $ADComputersHashtable.Keys) {
+    if ($ADComputersHashtable[$Key]['useraccountcontrol'] -eq 4096) { 
+        $EnabledComputersHashtable[$ADComputersHashtable[$Key]['name']] = ''
+    }
+}
+$EnabledComputersHashtable.Keys
