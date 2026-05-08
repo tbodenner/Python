@@ -193,6 +193,5 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-users.txt
-Users*txt
-users.db
+*.txt
+*.db
