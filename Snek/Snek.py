@@ -135,8 +135,12 @@ def get_users(computer_list: list[str]):
   # calculate our elapsed time
   elapsed_time = end_time - start_time
 
+  # create our folder for our output files if it does not exist
+  folder_path = ".\\Users TXT"
+  if not os.path.exists(folder_path):
+    os.makedirs(folder_path)
   # create our file name for our output file
-  file_name = "Users." + datetime.now().strftime('%Y%m%d%H%M%S') + ".txt"
+  file_name = os.path.join(folder_path, "Users." + datetime.now().strftime('%Y%m%d%H%M%S') + ".txt")
   # list of our user data
   all_user_data: list[list[str]] = []
   # write our users to a file

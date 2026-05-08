@@ -45,7 +45,7 @@ try {
         # otherwise, check if our result has two or more lines
         if ($QResult.Length -ge 2) {
             # get our user from our second line
-            $User = $QResult[1].Substring(1,12)
+            $User = $QResult[1].Substring(1,16).Trim()
             # return our user
             $User
         }
